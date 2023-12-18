@@ -1,0 +1,102 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                              Dashboard RSI Multicurrency for MT5                                               |
+//|                                               https://forexroboteasy.com                                              |
+//|                                                     Forex Robot Easy Team                                                    |
+//+------------------------------------------------------------------+
+#property strict
+
+//+------------------------------------------------------------------+
+//| Global Variables                                                  |
+//+------------------------------------------------------------------+
+double RSI[];
+double OverboughtLevel = 70;
+double OversoldLevel = 30;
+bool AlertEnabled = true;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Set up the currency pairs and timeframes to monitor
+    string currencies[] = {'EURUSD', 'GBPUSD', 'USDJPY'};
+    ENUM_TIMEFRAMES timeframes[] = {PERIOD_D1, PERIOD_H4, PERIOD_H1};
+
+    // Initialize RSI array
+    ArrayResize(RSI, ArraySize(currencies) * ArraySize(timeframes));
+
+    // Subscribe to RSI indicator for each currency pair and timeframe
+    for (int i = 0; i < ArraySize(currencies); i++)
+    {
+        for (int j = 0; j < ArraySize(timeframes); j++)
+        {
+            int index = i * ArraySize(timeframes) + j;
+            string symbol = currencies[i];
+            ENUM_TIMEFRAMES timeframe = timeframes[j];
+
+            IndicatorSetString(INDICATOR_SHORTNAME, 'RSI(' + IntegerToString(timeframe) + ')');
+            int handle = iRSI(symbol, timeframe, 14, PRICE_CLOSE);
+            IndicatorSetInteger(handle, INDICATOR_LEVELVALUE, OverboughtLevel);
+            IndicatorSetInteger(handle, INDICATOR_LEVELVALUE, OversoldLevel);
+            IndicatorSetInteger(handle, INDICATOR_APPLIED_PRICE, PRICE_CLOSE);
+            IndicatorSetInteger(handle, INDICATOR_LEVELCOLOR, clrRed);
+            IndicatorSetInteger(handle, INDICATOR_LEVELCOLOR, clrBlue);
+            IndicatorSetInteger(handle, INDICATOR_LEVELWIDTH, 1);
+            IndicatorSetInteger(handle, INDICATOR_LEVELWIDTH, 1);
+            IndicatorSetInteger(handle, INDICATOR_LEVELSTYLE, STYLE_SOLID);
+            IndicatorSetInteger(handle, INDICATOR_LEVELSTYLE, STYLE_SOLID);
+            IndicatorSetInteger(handle, INDICATOR_LEVELTYPE, DRAW_LINE);
+            IndicatorSetInteger(handle, INDICATOR_LEVELTYPE, DRAW_LINE);
+            IndicatorSetInteger(handle, INDICATOR_LEVELVALUE, OverboughtLevel);
+            IndicatorSetInteger(handle, INDICATOR_LEVELVALUE, OversoldLevel);
+
+            ChartIndicatorAdd(0, handle);
+        }
+    }
+
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Remove all RSI indicators from the chart
+    for (int i = ObjectsTotal() - 1; i >= 0; i--)
+    {
+        string name = ObjectName(i);
+        if (StringFind(name, 'RSI') != -1)
+        {
+            ObjectDelete(0, name);
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                              |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Update RSI values for each currency pair and timeframe
+    for (int i = 0; i < ArraySize(RSI); i++)
+    {
+        RSI[i] = iRSI(NULL, 0, 14, PRICE_CLOSE, i);
+    }
+
+    // Check for RSI crossing overbought and oversold levels
+    for (int i = 0; i < ArraySize(RSI); i++)
+    {
+        if (RSI[i] > OverboughtLevel && AlertEnabled)
+        {
+            Alert('RSI for ', SymbolName(i), ' on ', EnumToString(Period()), ' timeframe is overbought!');
+        }
+        else if (RSI[i] < OversoldLevel && AlertEnabled)
+        {
+            Alert('RSI for ', SymbolName(i), ' on ', EnumToString(Period()), ' timeframe is oversold!');
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
